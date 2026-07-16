@@ -12,7 +12,7 @@
     --line:rgba(243,239,232,.16);
     --panel:rgba(14,15,14,.72);
     --panel-solid:#111211;
-    --accent:#c8a97e;      /* arena / terracota suave */
+    --accent:#c8a97e;
     --accent-2:#e6d4b8;
     --shadow:0 18px 60px rgba(0,0,0,.55);
     --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
@@ -24,12 +24,10 @@
   #stage.grabbing{cursor:grabbing}
   canvas{display:block;width:100%;height:100%}
 
-  /* Vignette to focus the image and lift the UI */
   .vignette{position:fixed;inset:0;pointer-events:none;z-index:2;
     background:radial-gradient(120% 80% at 50% 42%,transparent 55%,rgba(0,0,0,.45) 100%);
     mix-blend-mode:multiply}
 
-  /* ---------- Top brand bar ---------- */
   .topbar{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;align-items:flex-start;
     justify-content:space-between;padding:22px 26px;pointer-events:none;
     background:linear-gradient(180deg,rgba(0,0,0,.55),transparent)}
@@ -48,14 +46,12 @@
   .iconbtn.active{border-color:var(--accent);color:var(--accent-2);box-shadow:0 0 0 1px var(--accent) inset}
   .iconbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 
-  /* ---------- Scene title (bottom center) ---------- */
   .scene-title{position:fixed;left:0;right:0;bottom:118px;z-index:5;text-align:center;pointer-events:none;
     transition:opacity .5s;padding:0 16px}
   .scene-title .floor{font-size:10.5px;letter-spacing:.38em;text-transform:uppercase;color:var(--accent);opacity:.95}
   .scene-title .name{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.01em;margin-top:6px;
     text-shadow:0 2px 24px rgba(0,0,0,.6)}
 
-  /* ---------- Navigation arrows ---------- */
   .navarrow{position:fixed;top:50%;transform:translateY(-50%);z-index:5;width:52px;height:52px;border-radius:50%;
     border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s;opacity:.7}
@@ -63,7 +59,6 @@
   .navarrow.prev{left:22px}.navarrow.next{right:22px}
   .navarrow svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 
-  /* ---------- Bottom dock ---------- */
   .dock{position:fixed;left:0;right:0;bottom:0;z-index:6;
     background:linear-gradient(0deg,rgba(0,0,0,.62),transparent);padding:14px 18px 16px}
   .dock-inner{max-width:1180px;margin:0 auto}
@@ -91,10 +86,6 @@
     opacity:0;transition:.25s}
   .thumb.active .dot{opacity:1}
 
-  /* When thumbs collapsed on small screens */
-  .dock.collapsed .thumbs,.dock.collapsed .floortabs{display:none}
-
-  /* ---------- Loading / intro overlay ---------- */
   .loader{position:fixed;inset:0;z-index:20;background:#0a0b0a;display:flex;flex-direction:column;
     align-items:center;justify-content:center;transition:opacity .8s ease;gap:22px}
   .loader.hidden{opacity:0;pointer-events:none}
@@ -107,13 +98,11 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .l-progress{font-size:11px;letter-spacing:.2em;color:var(--ink-dim)}
 
-  /* Small loader shown when switching scenes */
   .switch-load{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;
     pointer-events:none;opacity:0;transition:opacity .3s;background:rgba(8,9,8,.35)}
   .switch-load.show{opacity:1}
   .switch-load .spinner{margin:0}
 
-  /* Drag hint */
   .hint{position:fixed;left:50%;top:52%;z-index:5;transform:translate(-50%,-50%);
     display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none;transition:opacity .6s;color:var(--ink)}
   .hint svg{width:46px;height:46px;fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.9;
@@ -122,7 +111,6 @@
   @keyframes sway{0%,100%{transform:translateX(-9px)}50%{transform:translateX(9px)}}
   .hint.gone{opacity:0}
 
-  /* Info modal */
   .modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
     background:rgba(6,7,6,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:24px}
   .modal.open{display:flex}
@@ -156,7 +144,6 @@
   </div>
   <div class="vignette"></div>
 
-  <!-- Top bar -->
   <div class="topbar">
     <div class="brand">
       <div class="studio">Archviz&nbsp;Mallorca</div>
@@ -177,13 +164,11 @@
     </div>
   </div>
 
-  <!-- Scene title -->
   <div class="scene-title" id="sceneTitle">
     <div class="floor" id="tFloor"></div>
     <div class="name" id="tName"></div>
   </div>
 
-  <!-- Nav arrows -->
   <button class="navarrow prev" id="btnPrev" aria-label="Anterior">
     <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
   </button>
@@ -191,16 +176,13 @@
     <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
   </button>
 
-  <!-- Drag hint -->
   <div class="hint" id="hint">
     <svg viewBox="0 0 24 24"><path d="M6 12h12"/><path d="M9 9l-3 3 3 3"/><path d="M15 9l3 3-3 3"/></svg>
     <span>Arrastra para explorar</span>
   </div>
 
-  <!-- Switch loader -->
   <div class="switch-load" id="switchLoad"><div class="spinner"></div></div>
 
-  <!-- Bottom dock -->
   <div class="dock" id="dock">
     <div class="dock-inner">
       <div class="floortabs" id="floortabs"></div>
@@ -208,7 +190,6 @@
     </div>
   </div>
 
-  <!-- Loader / intro -->
   <div class="loader" id="loader">
     <div class="l-studio">Archviz&nbsp;Mallorca</div>
     <div class="l-rule"></div>
@@ -218,7 +199,6 @@
     <div class="l-progress" id="lprog">Cargando…</div>
   </div>
 
-  <!-- Info modal -->
   <div class="modal" id="modal">
     <div class="card">
       <button class="close" id="mClose">✕</button>
@@ -262,9 +242,8 @@
     {id:"PP", label:"Planta Primera"},
     {id:"PS", label:"Planta Sótano"}
   ];
-  var PANO_DIR = "panoramas/", THUMB_DIR = "thumbs/";
+  var THUMB_DIR = "thumbs/";
 
-  /* ---------------- WebGL setup ---------------- */
   var canvas = document.getElementById("gl");
   var gl = canvas.getContext("webgl",{antialias:true,alpha:false,preserveDrawingBuffer:false})
         || canvas.getContext("experimental-webgl");
@@ -314,9 +293,8 @@
 
   var MAXT=gl.getParameter(gl.MAX_TEXTURE_SIZE)||2048;
 
-  /* ---------------- State ---------------- */
-  var yaw=0, pitch=0, fov=75;                 // grados
-  var vYaw=0, vPitch=0;                        // inercia
+  var yaw=0, pitch=0, fov=75;
+  var vYaw=0, vPitch=0;
   var current=0, texCache={}, currentTex=null;
   var autorotate=true, lastInteract=performance.now(), fade=1, targetFade=1;
   var dragging=false, lastX=0, lastY=0, moved=false;
@@ -329,9 +307,13 @@
   }
   window.addEventListener("resize",resize);
 
-  /* ---------------- Texture loading ---------------- */
+  /* Carga la textura probando varias rutas: subcarpeta panoramas/ y raíz del repo */
   function loadTexture(slug, cb){
     if(texCache[slug]){ cb&&cb(texCache[slug]); return; }
+    var paths=[ "panoramas/"+encodeURIComponent(slug)+".jpg",
+                encodeURIComponent(slug)+".jpg",
+                "./"+encodeURIComponent(slug)+".jpg" ];
+    var idx=0;
     var img=new Image();
     img.onload=function(){
       var src=img;
@@ -352,8 +334,12 @@
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
       texCache[slug]=tex; cb&&cb(tex);
     };
-    img.onerror=function(){ console.error("No se pudo cargar",slug); cb&&cb(null); };
-    img.src=PANO_DIR+encodeURIComponent(slug)+".jpg";
+    img.onerror=function(){
+      idx++;
+      if(idx<paths.length){ img.src=paths[idx]; }
+      else { console.error("No se pudo cargar",slug); cb&&cb(null); }
+    };
+    img.src=paths[0];
   }
 
   function preloadNeighbors(i){
@@ -362,13 +348,12 @@
     });
   }
 
-  /* ---------------- Scene switching ---------------- */
   var switchLoad=document.getElementById("switchLoad");
   function goto(i, opts){
     opts=opts||{};
     i=(i%SCENES.length+SCENES.length)%SCENES.length;
     var s=SCENES[i];
-    targetFade=0;                                  // fundido a negro
+    targetFade=0;
     var t=setTimeout(function(){ switchLoad.classList.add("show"); },260);
     loadTexture(s.slug,function(tex){
       clearTimeout(t); switchLoad.classList.remove("show");
@@ -381,11 +366,9 @@
     });
   }
 
-  /* ---------------- Render loop ---------------- */
   function setRot(){
     var y=yaw*Math.PI/180, p=pitch*Math.PI/180;
     var cy=Math.cos(y),sy=Math.sin(y),cp=Math.cos(p),sp=Math.sin(p);
-    // column-major mat3 : R = Ry(yaw)*Rx(pitch)
     var m=[ cy, 0, -sy,   sy*sp, cp, cy*sp,   sy*cp, -sp, cy*cp ];
     gl.uniformMatrix3fv(uRot,false,m);
   }
@@ -394,20 +377,17 @@
   function frame(now){
     var dt=Math.min((now-last)/1000,0.05); last=now;
 
-    // inertia
     if(!dragging){
       yaw   += vYaw*dt*60;  vYaw*=0.92;
       pitch += vPitch*dt*60; vPitch*=0.92;
       if(Math.abs(vYaw)<0.001)vYaw=0;
       if(Math.abs(vPitch)<0.001)vPitch=0;
     }
-    // autorotate after idle
     if(autorotate && !dragging && (now-lastInteract)>3500 && vYaw===0){
       yaw += 2.2*dt;
     }
     pitch=Math.max(-85,Math.min(85,pitch));
 
-    // fade
     if(fade<targetFade)fade=Math.min(targetFade,fade+dt*3.2);
     else if(fade>targetFade)fade=Math.max(targetFade,fade-dt*4.5);
 
@@ -422,7 +402,6 @@
     requestAnimationFrame(frame);
   }
 
-  /* ---------------- Pointer / touch controls ---------------- */
   var stage=document.getElementById("stage");
   function down(x,y){ dragging=true; moved=false; lastX=x; lastY=y; vYaw=0; vPitch=0;
     lastInteract=performance.now(); stage.classList.add("grabbing"); }
@@ -430,7 +409,7 @@
     if(!dragging)return;
     var dx=x-lastX, dy=y-lastY; lastX=x; lastY=y;
     if(Math.abs(dx)+Math.abs(dy)>2) moved=true;
-    var k=fov/canvas.clientHeight*1.35;     // sensibilidad relativa al zoom
+    var k=fov/canvas.clientHeight*1.35;
     yaw   += dx*k;
     pitch += dy*k;
     vYaw=dx*k*0.4; vPitch=dy*k*0.4;
@@ -477,7 +456,6 @@
     lastInteract=performance.now();
   });
 
-  /* ---------------- Chrome / UI ---------------- */
   var tFloor=document.getElementById("tFloor"), tName=document.getElementById("tName"),
       sceneTitle=document.getElementById("sceneTitle");
   function floorLabel(id){ for(var i=0;i<FLOORS.length;i++)if(FLOORS[i].id===id)return FLOORS[i].label; return ""; }
@@ -488,7 +466,6 @@
     tName.textContent=s.name;
     sceneTitle.style.opacity=0;
     setTimeout(function(){ sceneTitle.style.opacity=1; },120);
-    // active thumb + floor tab
     document.querySelectorAll(".thumb").forEach(function(el){
       el.classList.toggle("active", el.dataset.idx==current);
     });
@@ -498,14 +475,12 @@
     document.title="Casa Soler · "+s.name+" — Archviz Mallorca";
   }
 
-  // build floor tabs
   var floortabs=document.getElementById("floortabs");
   var activeFloor="PB";
   FLOORS.forEach(function(f){
     var b=document.createElement("button");
     b.className="floortab"; b.textContent=f.label; b.dataset.floor=f.id;
     b.addEventListener("click",function(){ renderThumbs(f.id); setActiveFloorTab(f.id);
-      // jump to first scene of that floor
       for(var i=0;i<SCENES.length;i++){ if(SCENES[i].floor===f.id){ goto(i); break; } }
     });
     floortabs.appendChild(b);
@@ -515,7 +490,6 @@
     if(document.querySelector('.thumbs').dataset.floor!==id) renderThumbs(id);
   }
 
-  // build thumbnails for a floor
   var thumbs=document.getElementById("thumbs");
   function renderThumbs(floorId){
     thumbs.dataset.floor=floorId; thumbs.innerHTML="";
@@ -524,13 +498,12 @@
       var d=document.createElement("div");
       d.className="thumb"+(i===current?" active":""); d.dataset.idx=i;
       d.innerHTML='<span class="dot"></span><img src="'+THUMB_DIR+encodeURIComponent(s.slug)+
-        '.jpg" alt="" loading="lazy"><span class="cap">'+s.name+'</span>';
+        '.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src=\''+encodeURIComponent(s.slug)+'.jpg\'"><span class="cap">'+s.name+'</span>';
       d.addEventListener("click",function(){ goto(i); });
       thumbs.appendChild(d);
     });
   }
 
-  /* ---------------- Buttons ---------------- */
   var btnRotate=document.getElementById("btnRotate");
   btnRotate.addEventListener("click",function(){ autorotate=!autorotate;
     btnRotate.classList.toggle("active",autorotate); lastInteract=performance.now(); });
@@ -557,13 +530,11 @@
   function hideHint(){ if(hintGone)return; hintGone=true; hint.classList.add("gone"); }
   setTimeout(hideHint,6000);
 
-  /* ---------------- Boot ---------------- */
   var loader=document.getElementById("loader"), lprog=document.getElementById("lprog");
   resize();
   renderThumbs("PB");
   requestAnimationFrame(frame);
 
-  // load first scene, then reveal
   lprog.textContent="Cargando estancia…";
   fade=0; targetFade=1;
   loadTexture(SCENES[0].slug,function(tex){
