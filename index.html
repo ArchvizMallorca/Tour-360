@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Casa Soler · Tour Virtual 360° — Archviz Mallorca</title>
+<style>
+  :root{
+    --bg:#0c0d0c;
+    --ink:#f3efe8;
+    --ink-dim:#b7b0a4;
+    --line:rgba(243,239,232,.16);
+    --panel:rgba(14,15,14,.72);
+    --panel-solid:#111211;
+    --accent:#c8a97e;      /* arena / terracota suave */
+    --accent-2:#e6d4b8;
+    --shadow:0 18px 60px rgba(0,0,0,.55);
+    --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  #stage{position:fixed;inset:0;touch-action:none;cursor:grab}
+  #stage.grabbing{cursor:grabbing}
+  canvas{display:block;width:100%;height:100%}
+
+  /* Vignette to focus the image and lift the UI */
+  .vignette{position:fixed;inset:0;pointer-events:none;z-index:2;
+    background:radial-gradient(120% 80% at 50% 42%,transparent 55%,rgba(0,0,0,.45) 100%);
+    mix-blend-mode:multiply}
+
+  /* ---------- Top brand bar ---------- */
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;align-items:flex-start;
+    justify-content:space-between;padding:22px 26px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(0,0,0,.55),transparent)}
+  .brand{pointer-events:auto}
+  .brand .studio{font-family:var(--sans);font-size:11px;letter-spacing:.42em;text-transform:uppercase;
+    color:var(--ink);opacity:.92;font-weight:600}
+  .brand .rule{width:34px;height:1px;background:var(--accent);margin:9px 0 8px;opacity:.9}
+  .brand .project{font-family:var(--serif);font-size:26px;line-height:1;letter-spacing:.01em;color:var(--ink);font-weight:600}
+  .brand .sub{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--ink-dim);margin-top:7px}
+
+  .topright{display:flex;gap:10px;pointer-events:auto}
+  .iconbtn{width:42px;height:42px;border:1px solid var(--line);background:var(--panel);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:50%;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s;padding:0}
+  .iconbtn:hover{border-color:var(--accent);color:var(--accent-2);transform:translateY(-1px)}
+  .iconbtn.active{border-color:var(--accent);color:var(--accent-2);box-shadow:0 0 0 1px var(--accent) inset}
+  .iconbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- Scene title (bottom center) ---------- */
+  .scene-title{position:fixed;left:0;right:0;bottom:118px;z-index:5;text-align:center;pointer-events:none;
+    transition:opacity .5s;padding:0 16px}
+  .scene-title .floor{font-size:10.5px;letter-spacing:.38em;text-transform:uppercase;color:var(--accent);opacity:.95}
+  .scene-title .name{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.01em;margin-top:6px;
+    text-shadow:0 2px 24px rgba(0,0,0,.6)}
+
+  /* ---------- Navigation arrows ---------- */
+  .navarrow{position:fixed;top:50%;transform:translateY(-50%);z-index:5;width:52px;height:52px;border-radius:50%;
+    border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s;opacity:.7}
+  .navarrow:hover{opacity:1;border-color:var(--accent);color:var(--accent-2)}
+  .navarrow.prev{left:22px}.navarrow.next{right:22px}
+  .navarrow svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- Bottom dock ---------- */
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:6;
+    background:linear-gradient(0deg,rgba(0,0,0,.62),transparent);padding:14px 18px 16px}
+  .dock-inner{max-width:1180px;margin:0 auto}
+  .floortabs{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+  .floortab{pointer-events:auto;border:1px solid var(--line);background:var(--panel);color:var(--ink-dim);
+    font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;padding:8px 15px;border-radius:100px;cursor:pointer;
+    transition:.25s;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .floortab:hover{color:var(--ink);border-color:rgba(243,239,232,.32)}
+  .floortab.active{color:#1a160f;background:var(--accent);border-color:var(--accent);font-weight:600}
+
+  .thumbs{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:thin;
+    scrollbar-color:var(--accent) transparent;justify-content:flex-start}
+  .thumbs::-webkit-scrollbar{height:5px}
+  .thumbs::-webkit-scrollbar-thumb{background:var(--accent);border-radius:10px}
+  .thumb{position:relative;flex:0 0 auto;width:132px;height:74px;border-radius:8px;overflow:hidden;cursor:pointer;
+    border:1px solid transparent;transition:.25s;background:#1a1b1a}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;opacity:.78;transition:.3s}
+  .thumb:hover img{opacity:1;transform:scale(1.05)}
+  .thumb .cap{position:absolute;left:0;right:0;bottom:0;padding:14px 8px 6px;font-size:10.5px;letter-spacing:.02em;
+    color:var(--ink);background:linear-gradient(0deg,rgba(0,0,0,.82),transparent);text-align:left;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thumb.active{border-color:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,.5)}
+  .thumb.active img{opacity:1}
+  .thumb .dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--accent);
+    opacity:0;transition:.25s}
+  .thumb.active .dot{opacity:1}
+
+  /* When thumbs collapsed on small screens */
+  .dock.collapsed .thumbs,.dock.collapsed .floortabs{display:none}
+
+  /* ---------- Loading / intro overlay ---------- */
+  .loader{position:fixed;inset:0;z-index:20;background:#0a0b0a;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;transition:opacity .8s ease;gap:22px}
+  .loader.hidden{opacity:0;pointer-events:none}
+  .loader .l-studio{font-size:12px;letter-spacing:.46em;text-transform:uppercase;color:var(--ink);font-weight:600}
+  .loader .l-rule{width:44px;height:1px;background:var(--accent)}
+  .loader .l-project{font-family:var(--serif);font-size:40px;font-weight:600;letter-spacing:.02em}
+  .loader .l-sub{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--ink-dim);margin-top:-10px}
+  .spinner{width:34px;height:34px;border:2px solid rgba(243,239,232,.18);border-top-color:var(--accent);
+    border-radius:50%;animation:spin 1s linear infinite;margin-top:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .l-progress{font-size:11px;letter-spacing:.2em;color:var(--ink-dim)}
+
+  /* Small loader shown when switching scenes */
+  .switch-load{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;opacity:0;transition:opacity .3s;background:rgba(8,9,8,.35)}
+  .switch-load.show{opacity:1}
+  .switch-load .spinner{margin:0}
+
+  /* Drag hint */
+  .hint{position:fixed;left:50%;top:52%;z-index:5;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none;transition:opacity .6s;color:var(--ink)}
+  .hint svg{width:46px;height:46px;fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.9;
+    animation:sway 2.4s ease-in-out infinite}
+  .hint span{font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:.85}
+  @keyframes sway{0%,100%{transform:translateX(-9px)}50%{transform:translateX(9px)}}
+  .hint.gone{opacity:0}
+
+  /* Info modal */
+  .modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+    background:rgba(6,7,6,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:24px}
+  .modal.open{display:flex}
+  .card{max-width:440px;width:100%;background:var(--panel-solid);border:1px solid var(--line);border-radius:16px;
+    padding:34px 32px;box-shadow:var(--shadow);position:relative}
+  .card .studio{font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .card h2{font-family:var(--serif);font-weight:600;font-size:30px;margin:12px 0 4px}
+  .card p{color:var(--ink-dim);font-size:13.5px;line-height:1.7;margin:12px 0}
+  .card .keys{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin-top:16px;font-size:12.5px}
+  .card .keys b{color:var(--ink);font-weight:600}
+  .card .keys span{color:var(--ink-dim)}
+  .card .close{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+    background:transparent;color:var(--ink);cursor:pointer;font-size:16px;line-height:1}
+  .card .foot{margin-top:22px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim)}
+
+  @media (max-width:720px){
+    .brand .project{font-size:21px}
+    .scene-title{bottom:104px}
+    .scene-title .name{font-size:22px}
+    .navarrow{width:44px;height:44px}
+    .navarrow.prev{left:12px}.navarrow.next{right:12px}
+    .thumb{width:112px;height:64px}
+    .loader .l-project{font-size:30px}
+    .topbar{padding:16px 16px}
+  }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="gl"></canvas>
+  </div>
+  <div class="vignette"></div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="studio">Archviz&nbsp;Mallorca</div>
+      <div class="rule"></div>
+      <div class="project">Casa Soler</div>
+      <div class="sub">Tour Virtual 360°</div>
+    </div>
+    <div class="topright">
+      <button class="iconbtn active" id="btnRotate" title="Autorrotación" aria-label="Autorrotación">
+        <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+      </button>
+      <button class="iconbtn" id="btnInfo" title="Información" aria-label="Información">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>
+      </button>
+      <button class="iconbtn" id="btnFull" title="Pantalla completa" aria-label="Pantalla completa">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scene title -->
+  <div class="scene-title" id="sceneTitle">
+    <div class="floor" id="tFloor"></div>
+    <div class="name" id="tName"></div>
+  </div>
+
+  <!-- Nav arrows -->
+  <button class="navarrow prev" id="btnPrev" aria-label="Anterior">
+    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <button class="navarrow next" id="btnNext" aria-label="Siguiente">
+    <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+
+  <!-- Drag hint -->
+  <div class="hint" id="hint">
+    <svg viewBox="0 0 24 24"><path d="M6 12h12"/><path d="M9 9l-3 3 3 3"/><path d="M15 9l3 3-3 3"/></svg>
+    <span>Arrastra para explorar</span>
+  </div>
+
+  <!-- Switch loader -->
+  <div class="switch-load" id="switchLoad"><div class="spinner"></div></div>
+
+  <!-- Bottom dock -->
+  <div class="dock" id="dock">
+    <div class="dock-inner">
+      <div class="floortabs" id="floortabs"></div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+  </div>
+
+  <!-- Loader / intro -->
+  <div class="loader" id="loader">
+    <div class="l-studio">Archviz&nbsp;Mallorca</div>
+    <div class="l-rule"></div>
+    <div class="l-project">Casa Soler</div>
+    <div class="l-sub">Tour Virtual 360°</div>
+    <div class="spinner"></div>
+    <div class="l-progress" id="lprog">Cargando…</div>
+  </div>
+
+  <!-- Info modal -->
+  <div class="modal" id="modal">
+    <div class="card">
+      <button class="close" id="mClose">✕</button>
+      <div class="studio">Archviz&nbsp;Mallorca</div>
+      <h2>Casa Soler</h2>
+      <p>Recorrido virtual inmersivo en 360°. Arrastra sobre la imagen para mirar en cualquier dirección y desplázate entre estancias con el menú inferior o las flechas laterales.</p>
+      <div class="keys">
+        <b>Arrastrar</b><span>Girar la vista</span>
+        <b>Rueda / Pellizcar</b><span>Acercar y alejar</span>
+        <b>← →</b><span>Cambiar de estancia</span>
+        <b>F</b><span>Pantalla completa</span>
+      </div>
+      <div class="foot">Visualización Arquitectónica · Palma de Mallorca</div>
+    </div>
+  </div>
+
+<script>
+/* =========================================================================
+   CASA SOLER · Tour Virtual 360°  —  Archviz Mallorca
+   Visor equirectangular WebGL autónomo (sin dependencias externas)
+   ========================================================================= */
+(function(){
+  "use strict";
+
+  var SCENES = [
+    {slug:"living-001",  name:"Salón",                       floor:"PB"},
+    {slug:"living-002",  name:"Salón · Vista 2",             floor:"PB"},
+    {slug:"kitchen-001", name:"Cocina",                      floor:"PB"},
+    {slug:"cine-001",    name:"Cine · Sala Multimedia",      floor:"PB"},
+    {slug:"master-001",  name:"Dormitorio Principal",        floor:"PP"},
+    {slug:"master-002",  name:"Dormitorio Principal · V2",   floor:"PP"},
+    {slug:"bathroom-001",name:"Baño Principal",              floor:"PP"},
+    {slug:"bathroom-002",name:"Baño · Vista 2",              floor:"PP"},
+    {slug:"pool-001",    name:"Piscina",                     floor:"PS"},
+    {slug:"gym-001",     name:"Gimnasio",                    floor:"PS"},
+    {slug:"gym-002",     name:"Gimnasio · Vista 2",          floor:"PS"},
+    {slug:"parking-001", name:"Parking",                     floor:"PS"}
+  ];
+  var FLOORS = [
+    {id:"PB", label:"Planta Baja"},
+    {id:"PP", label:"Planta Primera"},
+    {id:"PS", label:"Planta Sótano"}
+  ];
+  var PANO_DIR = "panoramas/", THUMB_DIR = "thumbs/";
+
+  /* ---------------- WebGL setup ---------------- */
+  var canvas = document.getElementById("gl");
+  var gl = canvas.getContext("webgl",{antialias:true,alpha:false,preserveDrawingBuffer:false})
+        || canvas.getContext("experimental-webgl");
+  if(!gl){ document.getElementById("lprog").textContent="WebGL no disponible en este navegador."; return; }
+
+  var VS = "attribute vec2 aPos; varying vec2 vNdc; void main(){ vNdc=aPos; gl_Position=vec4(aPos,0.0,1.0); }";
+  var FS =
+    "precision highp float;\n"+
+    "varying vec2 vNdc;\n"+
+    "uniform sampler2D uTex;\n"+
+    "uniform mat3 uRot;\n"+
+    "uniform float uTanHalfFovY;\n"+
+    "uniform float uAspect;\n"+
+    "uniform float uFade;\n"+
+    "const float PI=3.141592653589793;\n"+
+    "void main(){\n"+
+    "  vec3 ray=normalize(vec3(vNdc.x*uTanHalfFovY*uAspect, vNdc.y*uTanHalfFovY, -1.0));\n"+
+    "  vec3 d=uRot*ray;\n"+
+    "  float u=0.5+atan(d.x,-d.z)/(2.0*PI);\n"+
+    "  float v=0.5-asin(clamp(d.y,-1.0,1.0))/PI;\n"+
+    "  vec3 c=texture2D(uTex, vec2(u,v)).rgb;\n"+
+    "  gl_FragColor=vec4(c*uFade, 1.0);\n"+
+    "}";
+
+  function sh(type,src){var s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+  var prog=gl.createProgram();
+  gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+
+  var quad=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,quad);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1, 1,-1, -1,1, 1,1]),gl.STATIC_DRAW);
+  var aPos=gl.getAttribLocation(prog,"aPos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+
+  var uRot=gl.getUniformLocation(prog,"uRot"),
+      uTanHalfFovY=gl.getUniformLocation(prog,"uTanHalfFovY"),
+      uAspect=gl.getUniformLocation(prog,"uAspect"),
+      uFade=gl.getUniformLocation(prog,"uFade"),
+      uTex=gl.getUniformLocation(prog,"uTex");
+  gl.uniform1i(uTex,0);
+
+  var MAXT=gl.getParameter(gl.MAX_TEXTURE_SIZE)||2048;
+
+  /* ---------------- State ---------------- */
+  var yaw=0, pitch=0, fov=75;                 // grados
+  var vYaw=0, vPitch=0;                        // inercia
+  var current=0, texCache={}, currentTex=null;
+  var autorotate=true, lastInteract=performance.now(), fade=1, targetFade=1;
+  var dragging=false, lastX=0, lastY=0, moved=false;
+  var dpr=Math.min(window.devicePixelRatio||1, 2);
+
+  function resize(){
+    var w=canvas.clientWidth, h=canvas.clientHeight;
+    canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
+    gl.viewport(0,0,canvas.width,canvas.height);
+  }
+  window.addEventListener("resize",resize);
+
+  /* ---------------- Texture loading ---------------- */
+  function loadTexture(slug, cb){
+    if(texCache[slug]){ cb&&cb(texCache[slug]); return; }
+    var img=new Image();
+    img.onload=function(){
+      var src=img;
+      if(img.width>MAXT){
+        var s=MAXT/img.width, cv=document.createElement("canvas");
+        cv.width=MAXT; cv.height=Math.round(img.height*s);
+        cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+        src=cv;
+      }
+      var tex=gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D,tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+      try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,src); }
+      catch(e){ console.error("tex",slug,e); }
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      texCache[slug]=tex; cb&&cb(tex);
+    };
+    img.onerror=function(){ console.error("No se pudo cargar",slug); cb&&cb(null); };
+    img.src=PANO_DIR+encodeURIComponent(slug)+".jpg";
+  }
+
+  function preloadNeighbors(i){
+    [(i+1)%SCENES.length,(i-1+SCENES.length)%SCENES.length].forEach(function(n){
+      if(!texCache[SCENES[n].slug]) loadTexture(SCENES[n].slug);
+    });
+  }
+
+  /* ---------------- Scene switching ---------------- */
+  var switchLoad=document.getElementById("switchLoad");
+  function goto(i, opts){
+    opts=opts||{};
+    i=(i%SCENES.length+SCENES.length)%SCENES.length;
+    var s=SCENES[i];
+    targetFade=0;                                  // fundido a negro
+    var t=setTimeout(function(){ switchLoad.classList.add("show"); },260);
+    loadTexture(s.slug,function(tex){
+      clearTimeout(t); switchLoad.classList.remove("show");
+      if(tex){ currentTex=tex; }
+      current=i;
+      if(!opts.keepView){ yaw=opts.yaw||0; pitch=0; vYaw=0; vPitch=0; }
+      updateChrome();
+      targetFade=1;
+      preloadNeighbors(i);
+    });
+  }
+
+  /* ---------------- Render loop ---------------- */
+  function setRot(){
+    var y=yaw*Math.PI/180, p=pitch*Math.PI/180;
+    var cy=Math.cos(y),sy=Math.sin(y),cp=Math.cos(p),sp=Math.sin(p);
+    // column-major mat3 : R = Ry(yaw)*Rx(pitch)
+    var m=[ cy, 0, -sy,   sy*sp, cp, cy*sp,   sy*cp, -sp, cy*cp ];
+    gl.uniformMatrix3fv(uRot,false,m);
+  }
+
+  var last=performance.now();
+  function frame(now){
+    var dt=Math.min((now-last)/1000,0.05); last=now;
+
+    // inertia
+    if(!dragging){
+      yaw   += vYaw*dt*60;  vYaw*=0.92;
+      pitch += vPitch*dt*60; vPitch*=0.92;
+      if(Math.abs(vYaw)<0.001)vYaw=0;
+      if(Math.abs(vPitch)<0.001)vPitch=0;
+    }
+    // autorotate after idle
+    if(autorotate && !dragging && (now-lastInteract)>3500 && vYaw===0){
+      yaw += 2.2*dt;
+    }
+    pitch=Math.max(-85,Math.min(85,pitch));
+
+    // fade
+    if(fade<targetFade)fade=Math.min(targetFade,fade+dt*3.2);
+    else if(fade>targetFade)fade=Math.max(targetFade,fade-dt*4.5);
+
+    var aspect=canvas.width/canvas.height;
+    gl.uniform1f(uAspect,aspect);
+    gl.uniform1f(uTanHalfFovY,Math.tan(fov*Math.PI/360));
+    gl.uniform1f(uFade,fade);
+    setRot();
+
+    if(currentTex){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,currentTex);
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4); }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------------- Pointer / touch controls ---------------- */
+  var stage=document.getElementById("stage");
+  function down(x,y){ dragging=true; moved=false; lastX=x; lastY=y; vYaw=0; vPitch=0;
+    lastInteract=performance.now(); stage.classList.add("grabbing"); }
+  function move(x,y){
+    if(!dragging)return;
+    var dx=x-lastX, dy=y-lastY; lastX=x; lastY=y;
+    if(Math.abs(dx)+Math.abs(dy)>2) moved=true;
+    var k=fov/canvas.clientHeight*1.35;     // sensibilidad relativa al zoom
+    yaw   += dx*k;
+    pitch += dy*k;
+    vYaw=dx*k*0.4; vPitch=dy*k*0.4;
+    lastInteract=performance.now();
+    hideHint();
+  }
+  function up(){ dragging=false; stage.classList.remove("grabbing"); }
+
+  stage.addEventListener("mousedown",function(e){ down(e.clientX,e.clientY); });
+  window.addEventListener("mousemove",function(e){ move(e.clientX,e.clientY); });
+  window.addEventListener("mouseup",up);
+  stage.addEventListener("dblclick",function(){ fov=Math.max(30,fov-18); });
+
+  stage.addEventListener("touchstart",function(e){
+    if(e.touches.length===1){ down(e.touches[0].clientX,e.touches[0].clientY); }
+    else if(e.touches.length===2){ pinchStart(e); }
+  },{passive:true});
+  stage.addEventListener("touchmove",function(e){
+    if(e.touches.length===1){ move(e.touches[0].clientX,e.touches[0].clientY); }
+    else if(e.touches.length===2){ pinchMove(e); }
+    if(e.cancelable) e.preventDefault();
+  },{passive:false});
+  stage.addEventListener("touchend",up,{passive:true});
+
+  var pinchD=0, pinchF=75;
+  function dist(e){var a=e.touches[0],b=e.touches[1];return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
+  function pinchStart(e){ dragging=false; pinchD=dist(e); pinchF=fov; }
+  function pinchMove(e){ if(!pinchD)return; var r=dist(e)/pinchD; fov=Math.max(30,Math.min(100,pinchF/r));
+    lastInteract=performance.now(); }
+
+  stage.addEventListener("wheel",function(e){
+    fov=Math.max(30,Math.min(100,fov+ (e.deltaY>0?4:-4)));
+    lastInteract=performance.now(); e.preventDefault();
+  },{passive:false});
+
+  document.addEventListener("keydown",function(e){
+    if(e.key==="ArrowLeft"){ goto(current-1); }
+    else if(e.key==="ArrowRight"){ goto(current+1); }
+    else if(e.key==="ArrowUp"){ fov=Math.max(30,fov-4); }
+    else if(e.key==="ArrowDown"){ fov=Math.min(100,fov+4); }
+    else if(e.key==="+"||e.key==="="){ fov=Math.max(30,fov-4); }
+    else if(e.key==="-"){ fov=Math.min(100,fov+4); }
+    else if(e.key.toLowerCase()==="f"){ toggleFull(); }
+    lastInteract=performance.now();
+  });
+
+  /* ---------------- Chrome / UI ---------------- */
+  var tFloor=document.getElementById("tFloor"), tName=document.getElementById("tName"),
+      sceneTitle=document.getElementById("sceneTitle");
+  function floorLabel(id){ for(var i=0;i<FLOORS.length;i++)if(FLOORS[i].id===id)return FLOORS[i].label; return ""; }
+
+  function updateChrome(){
+    var s=SCENES[current];
+    tFloor.textContent=floorLabel(s.floor);
+    tName.textContent=s.name;
+    sceneTitle.style.opacity=0;
+    setTimeout(function(){ sceneTitle.style.opacity=1; },120);
+    // active thumb + floor tab
+    document.querySelectorAll(".thumb").forEach(function(el){
+      el.classList.toggle("active", el.dataset.idx==current);
+    });
+    setActiveFloorTab(s.floor);
+    var act=document.querySelector('.thumb[data-idx="'+current+'"]');
+    if(act) act.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
+    document.title="Casa Soler · "+s.name+" — Archviz Mallorca";
+  }
+
+  // build floor tabs
+  var floortabs=document.getElementById("floortabs");
+  var activeFloor="PB";
+  FLOORS.forEach(function(f){
+    var b=document.createElement("button");
+    b.className="floortab"; b.textContent=f.label; b.dataset.floor=f.id;
+    b.addEventListener("click",function(){ renderThumbs(f.id); setActiveFloorTab(f.id);
+      // jump to first scene of that floor
+      for(var i=0;i<SCENES.length;i++){ if(SCENES[i].floor===f.id){ goto(i); break; } }
+    });
+    floortabs.appendChild(b);
+  });
+  function setActiveFloorTab(id){ activeFloor=id;
+    document.querySelectorAll(".floortab").forEach(function(el){ el.classList.toggle("active",el.dataset.floor===id); });
+    if(document.querySelector('.thumbs').dataset.floor!==id) renderThumbs(id);
+  }
+
+  // build thumbnails for a floor
+  var thumbs=document.getElementById("thumbs");
+  function renderThumbs(floorId){
+    thumbs.dataset.floor=floorId; thumbs.innerHTML="";
+    SCENES.forEach(function(s,i){
+      if(s.floor!==floorId)return;
+      var d=document.createElement("div");
+      d.className="thumb"+(i===current?" active":""); d.dataset.idx=i;
+      d.innerHTML='<span class="dot"></span><img src="'+THUMB_DIR+encodeURIComponent(s.slug)+
+        '.jpg" alt="" loading="lazy"><span class="cap">'+s.name+'</span>';
+      d.addEventListener("click",function(){ goto(i); });
+      thumbs.appendChild(d);
+    });
+  }
+
+  /* ---------------- Buttons ---------------- */
+  var btnRotate=document.getElementById("btnRotate");
+  btnRotate.addEventListener("click",function(){ autorotate=!autorotate;
+    btnRotate.classList.toggle("active",autorotate); lastInteract=performance.now(); });
+
+  document.getElementById("btnPrev").addEventListener("click",function(){ goto(current-1); });
+  document.getElementById("btnNext").addEventListener("click",function(){ goto(current+1); });
+
+  function toggleFull(){
+    var el=document.documentElement;
+    if(!document.fullscreenElement && !document.webkitFullscreenElement){
+      (el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);
+    } else {
+      (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
+    }
+  }
+  document.getElementById("btnFull").addEventListener("click",toggleFull);
+
+  var modal=document.getElementById("modal");
+  document.getElementById("btnInfo").addEventListener("click",function(){ modal.classList.add("open"); });
+  document.getElementById("mClose").addEventListener("click",function(){ modal.classList.remove("open"); });
+  modal.addEventListener("click",function(e){ if(e.target===modal) modal.classList.remove("open"); });
+
+  var hint=document.getElementById("hint"), hintGone=false;
+  function hideHint(){ if(hintGone)return; hintGone=true; hint.classList.add("gone"); }
+  setTimeout(hideHint,6000);
+
+  /* ---------------- Boot ---------------- */
+  var loader=document.getElementById("loader"), lprog=document.getElementById("lprog");
+  resize();
+  renderThumbs("PB");
+  requestAnimationFrame(frame);
+
+  // load first scene, then reveal
+  lprog.textContent="Cargando estancia…";
+  fade=0; targetFade=1;
+  loadTexture(SCENES[0].slug,function(tex){
+    currentTex=tex; current=0; updateChrome();
+    loader.classList.add("hidden");
+    preloadNeighbors(0);
+  });
+})();
+</script>
+</body>
+</html>
